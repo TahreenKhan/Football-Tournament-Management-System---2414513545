@@ -4,6 +4,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const teamRoutes = require("./routes/teamRoutes");
 const playerRoutes = require("./routes/playerRoutes");
+const tournamentRoutes = require("./routes/tournamentRoutes");
 
 
 dotenv.config();
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/players", playerRoutes);
+app.use("/api/tournaments", tournamentRoutes);
 
 
 const PORT = process.env.PORT || 5000;
