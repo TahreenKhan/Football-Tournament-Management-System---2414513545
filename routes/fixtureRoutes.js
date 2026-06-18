@@ -12,8 +12,15 @@ router.post(
 
 router.get(
   "/tournament/:tournamentId",
-  verifyToken,
   fixtureController.getFixturesByTournament
 );
+
+router.patch(
+  "/:fixtureId/result",
+  verifyToken,
+  fixtureController.submitMatchResult
+);
+
+router.get("/:fixtureId", fixtureController.getFixtureById);
 
 module.exports = router;

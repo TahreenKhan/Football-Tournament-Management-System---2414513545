@@ -22,7 +22,7 @@ const generateKnockoutFixtures = async (req, res) => {
 
 const getFixturesByTournament = async (req, res) => {
   try {
-    const fixtures = await fixtureService.getFixturesByTournament(
+    const fixtures = await fixtureService.getTournamentFixtures(
       req.params.tournamentId
     );
 
@@ -39,7 +39,45 @@ const getFixturesByTournament = async (req, res) => {
   }
 };
 
+const getFixtureById = async (req, res) => {
+  try {
+    const fixture = await fixtureService.getFixtureById(req.params.fixtureId);
+
+    res.status(200).json({
+      success: true,
+      data: fixture,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to fetch fixture",
+    });
+  }
+};
+
+const submitMatchResult = async (req, res) => {
+  try {
+    const fixture = await fixtureService.submitMatchResult(
+      req.params.fixtureId,
+      req.body
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Match result submitted successfully",
+      data: fixture,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to submit match result",
+    });
+  }
+};
+
 module.exports = {
   generateKnockoutFixtures,
   getFixturesByTournament,
+  getFixtureById,
+  submitMatchResult,
 };

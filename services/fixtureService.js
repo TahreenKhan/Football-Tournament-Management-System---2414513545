@@ -37,6 +37,12 @@ const generateKnockoutFixtures = async (tournamentId) => {
     throw createError("Fixtures can only be generated for knockout tournaments", 400);
   }
 
+  const fixturesAlreadyExist = await Fixture.exists({ tournament: tournamentId });
+
+  if (fixturesAlreadyExist) {
+    throw createError("Fixtures already generated for this tournament", 409);
+  }
+
   if (!tournament.registeredTeams || tournament.registeredTeams.length === 0) {
     throw createError("Tournament must have registered teams", 400);
   }
@@ -69,7 +75,19 @@ const generateKnockoutFixtures = async (tournamentId) => {
   });
 };
 
-const getFixturesByTournament = async (tournamentId) => {
+const getFixtureById = async (fixtureId) => {
+  validateObjectId(fixtureId, "fixture id");
+
+  const fixture = await populateFixtureTeams(Fixture.findById(fixtureId));
+
+  if (!fixture) {
+    throw createError("Fixture not found", 404);
+  }
+
+  return fixture;
+};
+
+const getTournamentFixtures = async (tournamentId) => {
   validateObjectId(tournamentId, "tournament id");
 
   const tournament = await Tournament.findById(tournamentId);
@@ -84,7 +102,65 @@ const getFixturesByTournament = async (tournamentId) => {
   });
 };
 
+const submitMatchResult = async (fixtureId, resultData) => {
+  validateObjectId(fixtureId, "fixture id");
+
+  const fixture = await Fixture.findById(fixtureId).populate(
+    "tournament",
+    "name tournamentType status"
+  );
+
+  if (!fixture) {
+    throw createError("Fixture not found", 404);
+  }
+
+  if (fixture.status === "COMPLETED") {
+    throw createError("Match result already submitted", 400);
+  }
+
+  const homeScore = Number(resultData.homeScore);
+  const awayScore = Number(resultData.awayScore);
+
+  if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
+    throw createError("Home score and away score must be valid numbers", 400);
+  }
+
+  if (homeScore < 0 || awayScore < 0) {
+    throw createError("Scores cannot be negative", 400);
+  }
+
+  if (
+    fixture.tournament.tournamentType === "KNOCKOUT" &&
+    homeScore === awayScore
+  ) {
+    throw createError("Knockout matches cannot end in a draw", 400);
+  }
+
+  let winner = null;
+
+  if (homeScore > awayScore) {
+    winner = fixture.homeTeam;
+  }
+
+  if (awayScore > homeScore) {
+    winner = fixture.awayTeam;
+  }
+
+  fixture.homeScore = homeScore;
+  fixture.awayScore = awayScore;
+  fixture.winner = winner;
+  fixture.status = "COMPLETED";
+  fixture.playedAt = new Date();
+
+  await fixture.save();
+
+  return getFixtureById(fixture._id);
+};
+
 module.exports = {
   generateKnockoutFixtures,
-  getFixturesByTournament,
+  submitMatchResult,
+  getFixtureById,
+  getTournamentFixtures,
+  getFixturesByTournament: getTournamentFixtures,
 };

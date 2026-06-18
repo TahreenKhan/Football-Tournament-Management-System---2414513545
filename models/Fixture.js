@@ -27,6 +27,20 @@ const fixtureSchema = new mongoose.Schema(
       ref: "Team",
       default: null,
     },
+    homeScore: {
+      type: Number,
+      default: 0,
+      min: [0, "Home score cannot be negative"],
+    },
+    awayScore: {
+      type: Number,
+      default: 0,
+      min: [0, "Away score cannot be negative"],
+    },
+    playedAt: {
+      type: Date,
+      default: null,
+    },
     status: {
       type: String,
       enum: ["SCHEDULED", "COMPLETED"],
