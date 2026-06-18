@@ -39,6 +39,34 @@ const getFixturesByTournament = async (req, res) => {
   }
 };
 
+const generateNextRound = async (req, res) => {
+  try {
+    const result = await fixtureService.generateNextRound(
+      req.params.tournamentId
+    );
+
+    if (result.championDeclared) {
+      return res.status(200).json({
+        success: true,
+        message: "Tournament champion declared",
+        data: result,
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Next round fixtures generated successfully",
+      count: result.length,
+      data: result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Failed to generate next round",
+    });
+  }
+};
+
 const getFixtureById = async (req, res) => {
   try {
     const fixture = await fixtureService.getFixtureById(req.params.fixtureId);
@@ -77,6 +105,7 @@ const submitMatchResult = async (req, res) => {
 
 module.exports = {
   generateKnockoutFixtures,
+  generateNextRound,
   getFixturesByTournament,
   getFixtureById,
   submitMatchResult,

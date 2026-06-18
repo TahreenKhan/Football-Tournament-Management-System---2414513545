@@ -10,6 +10,12 @@ router.post(
   fixtureController.generateKnockoutFixtures
 );
 
+router.post(
+  "/next-round/:tournamentId",
+  verifyToken,
+  fixtureController.generateNextRound
+);
+
 router.get(
   "/tournament/:tournamentId",
   fixtureController.getFixturesByTournament

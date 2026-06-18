@@ -102,6 +102,116 @@ const getTournamentFixtures = async (tournamentId) => {
   });
 };
 
+const generateNextRound = async (tournamentId) => {
+  validateObjectId(tournamentId, "tournament id");
+
+  const tournament = await Tournament.findById(tournamentId);
+
+  if (!tournament) {
+    throw createError("Tournament not found", 404);
+  }
+
+  if (tournament.tournamentType !== "KNOCKOUT") {
+    throw createError("Next round can only be generated for knockout tournaments", 400);
+  }
+
+  const latestFixture = await Fixture.findOne({ tournament: tournamentId })
+    .sort({ round: -1 })
+    .select("round");
+
+  if (!latestFixture) {
+    throw createError("No fixtures found for this tournament", 404);
+  }
+
+  const currentRound = latestFixture.round;
+  const nextRound = currentRound + 1;
+
+  const scheduledFixtureExists = await Fixture.exists({
+    tournament: tournamentId,
+    round: currentRound,
+    status: "SCHEDULED",
+  });
+
+  if (scheduledFixtureExists) {
+    throw createError("Current round is not fully completed", 400);
+  }
+
+  const currentRoundFixtures = await Fixture.find({
+    tournament: tournamentId,
+    round: currentRound,
+    status: "COMPLETED",
+    winner: { $ne: null },
+  }).sort({ createdAt: 1 });
+
+  if (currentRoundFixtures.length === 0) {
+    throw createError("Current round is not fully completed", 400);
+  }
+
+  const totalCurrentRoundFixtures = await Fixture.countDocuments({
+    tournament: tournamentId,
+    round: currentRound,
+  });
+
+  if (currentRoundFixtures.length !== totalCurrentRoundFixtures) {
+    throw createError("Current round is not fully completed", 400);
+  }
+
+  const winners = currentRoundFixtures.map((fixture) => fixture.winner);
+
+  if (winners.length === 1) {
+    tournament.champion = winners[0];
+    tournament.status = "COMPLETED";
+    await tournament.save();
+
+    const completedTournament = await Tournament.findById(tournamentId)
+      .populate("champion", "teamName city coach logoUrl")
+      .populate("registeredTeams", "teamName city coach logoUrl")
+      .populate("createdBy", "username email role");
+
+    return {
+      championDeclared: true,
+      tournament: completedTournament,
+      champion: completedTournament.champion,
+    };
+  }
+
+  if (winners.length < 1) {
+    throw createError("Current round is not fully completed", 400);
+  }
+
+  if (winners.length % 2 !== 0) {
+    throw createError("Even number of winners required to generate next round", 400);
+  }
+
+  const nextRoundAlreadyExists = await Fixture.exists({
+    tournament: tournamentId,
+    round: nextRound,
+  });
+
+  if (nextRoundAlreadyExists) {
+    throw createError("Next round already generated", 409);
+  }
+
+  const fixtures = [];
+
+  for (let index = 0; index < winners.length; index += 2) {
+    fixtures.push({
+      tournament: tournament._id,
+      round: nextRound,
+      homeTeam: winners[index],
+      awayTeam: winners[index + 1],
+      status: "SCHEDULED",
+    });
+  }
+
+  const createdFixtures = await Fixture.insertMany(fixtures);
+  const fixtureIds = createdFixtures.map((fixture) => fixture._id);
+
+  return populateFixtureTeams(Fixture.find({ _id: { $in: fixtureIds } })).sort({
+    createdAt: 1,
+  });
+};
+
 const submitMatchResult = async (fixtureId, resultData) => {
   validateObjectId(fixtureId, "fixture id");
 
@@ -159,6 +269,7 @@ const submitMatchResult = async (fixtureId, resultData) => {
 
 module.exports = {
   generateKnockoutFixtures,
+  generateNextRound,
   submitMatchResult,
   getFixtureById,
   getTournamentFixtures,

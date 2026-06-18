@@ -49,6 +49,11 @@ const tournamentSchema = new mongoose.Schema(
         ref: "Team",
       },
     ],
+    champion: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Team",
+      default: null,
+    },
   },
   {
     timestamps: true,
