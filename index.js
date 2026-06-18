@@ -6,6 +6,8 @@ const teamRoutes = require("./routes/teamRoutes");
 const playerRoutes = require("./routes/playerRoutes");
 const tournamentRoutes = require("./routes/tournamentRoutes");
 const fixtureRoutes = require("./routes/fixtureRoutes");
+const standingsRoutes = require("./routes/standingsRoutes");
+const statisticsRoutes = require("./routes/statisticsRoutes");
 
 
 dotenv.config();
@@ -17,6 +19,8 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/players", playerRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/fixtures", fixtureRoutes);
+app.use("/api/standings", standingsRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 
 const PORT = process.env.PORT || 5000;
