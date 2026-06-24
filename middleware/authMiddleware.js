@@ -3,6 +3,10 @@ const User = require("../models/User");
 
 const verifyToken = async (req, res, next) => {
   try {
+    if (req.path === "/login" || req.path === "/register" || req.path === "/api/auth/login" || req.path === "/api/auth/register") {
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

@@ -8,6 +8,7 @@ const tournamentRoutes = require("./routes/tournamentRoutes");
 const fixtureRoutes = require("./routes/fixtureRoutes");
 const standingsRoutes = require("./routes/standingsRoutes");
 const statisticsRoutes = require("./routes/statisticsRoutes");
+const { verifyToken } = require("./middleware/authMiddleware");
 
 
 dotenv.config();
@@ -15,6 +16,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use(verifyToken);
 app.use("/api/teams", teamRoutes);
 app.use("/api/players", playerRoutes);
 app.use("/api/tournaments", tournamentRoutes);
